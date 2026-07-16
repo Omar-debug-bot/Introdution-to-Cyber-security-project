@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Woki Toki 🎙️</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--g:#00e676;--gd:#00c853;--dk:#0d0d0d;--s1:#1a1a1a;--s2:#252525;--br:#2e2e2e;--tx:#f0f0f0;--mu:#888;--er:#ff5252}
+body{background:var(--dk);color:var(--tx);font-family:'Courier New',monospace;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
+input{width:100%;padding:11px 13px;background:var(--s2);border:1px solid var(--br);border-radius:8px;color:var(--tx);font-family:inherit;font-size:13px;margin-bottom:10px;outline:none}
+input:focus{border-color:var(--g)}
+.btn{width:100%;padding:12px;background:var(--g);color:#000;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:bold;letter-spacing:2px;cursor:pointer;margin-top:2px}
+.btn:hover{background:var(--gd)} .btn:active{transform:scale(.98)}
+
+/* Auth */
+#auth{width:340px;background:var(--s1);border:1px solid var(--br);border-radius:12px;padding:36px 28px}
+.logo{text-align:center;margin-bottom:28px}
+.logo .ic{font-size:44px}
+.logo h1{font-size:24px;color:var(--g);letter-spacing:4px;margin-top:6px}
+.logo p{color:var(--mu);font-size:11px;margin-top:3px;letter-spacing:1px}
+.tabs{display:flex;border:1px solid var(--br);border-radius:8px;overflow:hidden;margin-bottom:20px}
+.tab{flex:1;padding:9px;background:none;border:none;color:var(--mu);font-family:inherit;font-size:12px;cursor:pointer;letter-spacing:2px}
+.tab.on{background:var(--g);color:#000;font-weight:bold}
+.flash{margin-top:12px;padding:9px 13px;border-radius:8px;font-size:12px;display:none;text-align:center}
+.flash.e{background:#2a0a0a;border:1px solid var(--er);color:var(--er)}
+.flash.k{background:#0a2a0a;border:1px solid var(--g);color:var(--g)}
+
+/* Chat */
+#chat{display:none;width:880px;height:90vh;background:var(--s1);border:1px solid var(--br);border-radius:12px;overflow:hidden;flex-direction:row}
+#side{width:240px;border-right:1px solid var(--br);display:flex;flex-direction:column;flex-shrink:0}
+.shd{padding:16px;border-bottom:1px solid var(--br);display:flex;align-items:center;gap:8px}
+.me-label{font-size:12px;color:var(--g);font-weight:bold;letter-spacing:1px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.xbtn{background:none;border:1px solid var(--br);color:var(--mu);font-size:10px;font-family:inherit;padding:4px 7px;border-radius:4px;cursor:pointer;letter-spacing:1px}
+.xbtn:hover{border-color:var(--er);color:var(--er)}
+.new-area{padding:10px;border-bottom:1px solid var(--br)}
+.new-area input{margin-bottom:6px;font-size:12px}
+.new-area .hint{font-size:10px;color:var(--mu);margin-bottom:6px;letter-spacing:1px}
+.new-area .flash{margin-top:6px;font-size:11px}
+.cl{padding:8px 14px 4px;font-size:10px;letter-spacing:2px;color:var(--mu)}
+#clist{flex:1;overflow-y:auto}
+.ci{padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;border-left:3px solid transparent}
+.ci:hover{background:var(--s2)} .ci.on{background:var(--s2);border-left-color:var(--g)}
+.av{width:32px;height:32px;background:var(--s2);border:1px solid var(--br);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:bold;color:var(--g);flex-shrink:0}
+.av.grp{font-size:10px}
+.cname{font-size:13px;letter-spacing:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.dot{width:7px;height:7px;background:var(--g);border-radius:50%;flex-shrink:0}
+#panel{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.chdr{padding:14px 18px;border-bottom:1px solid var(--br);display:flex;align-items:center;gap:10px}
+.cwith{font-size:14px;color:var(--g);letter-spacing:2px}
+.badge{font-size:10px;background:#0a2a0a;border:1px solid var(--g);color:var(--g);padding:3px 8px;border-radius:20px;letter-spacing:1px;margin-left:auto}
+#msgs{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:9px}
+.emp{margin:auto;text-align:center;color:var(--mu)}
+.emp .bi{font-size:44px;margin-bottom:10px}
+.emp p{font-size:12px;letter-spacing:1px}
+.msg{max-width:68%;padding:9px 13px;border-radius:10px;word-break:break-word}
+.msg.mine{align-self:flex-end;background:var(--g);color:#000}
+.msg.theirs{align-self:flex-start;background:var(--s2);border:1px solid var(--br)}
+.meta{font-size:10px;margin-top:4px;opacity:.65;letter-spacing:.5px}
+.iarea{padding:12px;border-top:1px solid var(--br);display:flex;gap:8px}
+.iarea input{margin:0;flex:1}
+#sbtn{width:auto;padding:10px 18px;margin:0;font-size:16px;border-radius:8px;letter-spacing:0}
+.nochat{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--mu);gap:10px}
+.nochat .bi{font-size:48px} .nochat p{font-size:12px;letter-spacing:2px}
+::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-thumb{background:var(--br);border-radius:4px}
+</style>
+</head>
+<body>
+
+<div id="auth">
+  <div class="logo"><div class="ic">🎙️</div><h1>WOKI TOKI</h1><p>AES-256 ENCRYPTED CHAT</p></div>
+  <div class="tabs">
+    <button class="tab on" onclick="tab('login')">LOGIN</button>
+    <button class="tab" onclick="tab('reg')">REGISTER</button>
+  </div>
+  <div id="lf">
+    <input id="lu" type="text" placeholder="Username" autocomplete="off">
+    <input id="lp" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn" onclick="doLogin()">LOGIN</button>
+  </div>
+  <div id="rf" style="display:none">
+    <input id="ru" type="text" placeholder="Choose a username" autocomplete="off">
+    <input id="rp" type="password" placeholder="Choose a password" onkeydown="if(event.key==='Enter')doReg()">
+    <button class="btn" onclick="doReg()">CREATE ACCOUNT</button>
+  </div>
+  <div id="amsg" class="flash"></div>
+</div>
+
+<div id="chat">
+  <div id="side">
+    <div class="shd">
+      <span class="me-label" id="mlbl">—</span>
+      <button class="xbtn" onclick="logout()">EXIT</button>
+    </div>
+    <div class="new-area">
+      <p class="hint">ONE USERNAME = DM · MULTIPLE (comma-sep) = GROUP</p>
+      <input id="ncu" placeholder="user1 or user1, user2, ..." autocomplete="off" onkeydown="if(event.key==='Enter')openChat()">
+      <button class="btn" onclick="openChat()">+ OPEN CHAT</button>
+      <div id="ncmsg" class="flash"></div>
+    </div>
+    <div class="cl">RECENT CHATS</div>
+    <div id="clist"></div>
+  </div>
+
+  <div id="panel">
+    <div class="nochat" id="nc"><div class="bi">🎙️</div><p>SELECT A CHAT TO BEGIN</p></div>
+    <div id="ac" style="display:none;flex-direction:column;height:100%">
+      <div class="chdr">
+        <span>📡</span>
+        <span class="cwith" id="cwn">—</span>
+        <span class="badge">🔒 AES-256</span>
+      </div>
+      <div id="msgs"></div>
+      <div class="iarea">
+        <input id="mi" placeholder="Type a message..." onkeydown="if(event.key==='Enter')send()">
+        <button class="btn" id="sbtn" onclick="send()">➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let token='', me='', curRoom='', curMembers=[];
+let socket=null, contacts=[];  // contacts: [{room, members, label}]
+
+const $=id=>document.getElementById(id);
+
+// ─── Auth ────────────────────────────────────────────────────────────────────
+function tab(t){
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('on',(t==='login'&&i===0)||(t==='reg'&&i===1)));
+  $('lf').style.display=t==='login'?'':'none';
+  $('rf').style.display=t==='reg'?'':'none';
+  flash('amsg','','');
+}
+function flash(id,msg,type){const e=$(id);e.textContent=msg;e.className='flash'+(msg?' '+type:'');e.style.display=msg?'block':'none';}
+async function post(url,body){return (await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();}
+
+async function doReg(){
+  const u=$('ru').value.trim().toLowerCase(), p=$('rp').value;
+  if(!u||!p)return flash('amsg','Fill in all fields','e');
+  const r=await post('/api/register',{username:u,password:p});
+  r.ok?(flash('amsg','Account created! Please login.','k'),tab('login')):flash('amsg',r.msg,'e');
+}
+async function doLogin(){
+  const u=$('lu').value.trim().toLowerCase(), p=$('lp').value;
+  if(!u||!p)return flash('amsg','Fill in all fields','e');
+  const r=await post('/api/login',{username:u,password:p});
+  if(r.ok){token=r.token;me=r.username;enterChat();}else flash('amsg',r.msg,'e');
+}
+function logout(){
+  token=me=curRoom='';curMembers=[];contacts=[];
+  if(socket){socket.disconnect();socket=null;}
+  $('auth').style.display='';$('chat').style.display='none';
+  $('lu').value='';$('lp').value='';
+}
+
+// ─── Chat ────────────────────────────────────────────────────────────────────
+function enterChat(){
+  $('auth').style.display='none';$('chat').style.display='flex';
+  $('mlbl').textContent='🟢 '+me.toUpperCase();
+  socket=io();
+  socket.emit('join',{token});
+  socket.on('new_message',d=>{
+    if(d.room===curRoom) appendMsg(d.from,d.text,d.time);
+    // ensure contact exists
+    if(!contacts.find(c=>c.room===d.room)){
+      contacts.push({room:d.room,members:d.members,label:roomLabel(d.members)});
+      renderContacts();
+    }
+  });
+  socket.on('error',d=>flash('ncmsg',d.msg,'e'));
+  socket.on('online',d=>renderContacts(d.users));
+}
+
+function roomLabel(members){return members.filter(m=>m!==me).join(', ').toUpperCase();}
+
+async function openChat(){
+  const raw=$('ncu').value.trim().toLowerCase();
+  if(!raw)return;
+  const members=raw.split(',').map(s=>s.trim()).filter(Boolean);
+  if(members.includes(me))return flash('ncmsg','You cannot chat with yourself!','e');
+
+  // Validate all users exist on server
+  const chk=await fetch('/api/check_users',{method:'POST',headers:{'Content-Type':'application/json','X-Token':token},body:JSON.stringify({usernames:members})});
+  const res=await chk.json();
+  if(!res.ok)return flash('ncmsg',res.msg,'e');
+
+  flash('ncmsg','','');
+  $('ncu').value='';
+  const all=[...new Set([me,...members])];
+  const rid=all.slice().sort().join('_');
+  if(!contacts.find(c=>c.room===rid)){
+    contacts.push({room:rid,members:all,label:roomLabel(all)});
+    renderContacts();
+  }
+  selectChat(rid);
+}
+
+function renderContacts(online=[]){
+  const list=$('clist');
+  if(!contacts.length){list.innerHTML='<div style="padding:14px;color:var(--mu);font-size:11px;text-align:center">No recent chats</div>';return;}
+  list.innerHTML='';
+  contacts.forEach(c=>{
+    const isGrp=c.members.length>2;
+    const others=c.members.filter(m=>m!==me);
+    const isOnline=others.some(o=>online.includes(o));
+    const d=document.createElement('div');
+    d.className='ci'+(c.room===curRoom?' on':'');
+    d.innerHTML=`<div class="av${isGrp?' grp':''}">${isGrp?'👥':c.label[0]}</div><span class="cname">${c.label}</span>${isOnline&&!isGrp?'<span class="dot"></span>':''}`;
+    d.onclick=()=>selectChat(c.room);
+    list.appendChild(d);
+  });
+}
+
+async function selectChat(rid){
+  const c=contacts.find(x=>x.room===rid); if(!c)return;
+  curRoom=rid; curMembers=c.members;
+  $('nc').style.display='none';$('ac').style.display='flex';
+  $('cwn').textContent=(c.members.length>2?'👥 ':'')+c.label;
+  document.querySelectorAll('.ci').forEach(el=>el.classList.toggle('on',el.onclick.toString().includes(`'${rid}'`)));
+  renderContacts();
+  $('msgs').innerHTML='';
+  const others=c.members.filter(m=>m!==me);
+  const r=await(await fetch(`/api/history?with=${others.join(',')}`,{headers:{'X-Token':token}})).json();
+  if(r.ok&&r.history.length) r.history.forEach(m=>appendMsg(m.from,m.text,m.time));
+  else $('msgs').innerHTML='<div class="emp"><div class="bi">📡</div><p>NO MESSAGES YET — SAY HELLO!</p></div>';
+  $('mi').focus();
+}
+
+function send(){
+  const text=$('mi').value.trim();
+  if(!text||!curRoom)return;
+  const recipients=curMembers.filter(m=>m!==me);
+  socket.emit('send_message',{token,to:recipients,text});
+  $('mi').value='';
+}
+
+function appendMsg(from,text,time){
+  const box=$('msgs');
+  const es=box.querySelector('.emp'); if(es)es.remove();
+  const d=document.createElement('div');
+  d.className='msg '+(from===me?'mine':'theirs');
+  const label=from===me?'YOU':from.toUpperCase();
+  d.innerHTML=`<div>${esc(text)}</div><div class="meta">${label} · ${time}</div>`;
+  box.appendChild(d); box.scrollTop=box.scrollHeight;
+}
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>
