@@ -18,6 +18,8 @@ Messages are secured using AES encryption, and the app supports group chat funct
 
 \- AES Encryption (PyCryptodome)
 
+\- SHA-256 Password Hashing
+
 \- HTML/CSS/JS (front-end)
 
 
@@ -32,6 +34,7 @@ Messages are secured using AES encryption, and the app supports group chat funct
 
 \- Simple, lightweight web interface
 
+\-- Password hashing with SHA-256 for secure user authentication
 
 
 \## About This Project
