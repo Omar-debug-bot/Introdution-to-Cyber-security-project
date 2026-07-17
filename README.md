@@ -46,7 +46,7 @@ AES encryption implementation.
 
 
 
-\*\*Team members:\*\* \[Omar](https://github.com/Omar-debug-bot), \[Seif Yasser](https://github.com/seifyasser264-ship-it)
+**Team members:** [Omar](https://github.com/Omar-debug-bot), [Seif Yasser](https://github.com/seifyasser264-ship-it)
 
 
 
